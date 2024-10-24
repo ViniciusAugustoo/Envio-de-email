@@ -1,0 +1,62 @@
+`import win32com.client as win32
+import pandas as pd
+from docx import Document
+
+
+# Carregar dados do Excel
+excel_file = "C:/Users/usuario/Documents/xlsx"
+df = pd.read_excel(excel_file)
+
+# Remover espaços em branco dos nomes das colunas
+df.columns = df.columns.str.strip()
+
+# Carregar o corpo do email do Word
+word_file = "C:/Users/usuario/Documents/docx"
+doc = Document(word_file)
+
+# Criar integração com Outlook
+outlook = win32.Dispatch('Outlook.Application')
+
+# Enviar emails personalizados
+for index, row in df.iterrows():
+    email = outlook.CreateItem(0)
+    
+    try:
+        # Obter dados do Excel
+        email_destino = row['Email']
+        nome = row['Nome']
+        informacao = str(row['Informação'])
+        eu = str(row['eu'])
+    except KeyError as e:
+        print(f"Erro: A coluna {e} não foi encontrada.")
+        continue  # Pula para a próxima iteração se houver erro
+
+    # Montar o corpo do email
+    corpo_email = ''
+    for paragraph in doc.paragraphs:
+        texto = paragraph.text
+        texto = texto.replace('{Nome}', nome)
+        texto = texto.replace('{Informação}', informacao)
+        texto = texto.replace('{eu}', eu)
+        corpo_email += texto + '\n'
+    
+    # Exibir informações antes de enviar
+    print(f"\nVerifique as informações do e-mail:\n")
+    print(f"Para: {email_destino}")
+    print(f"Nome: {nome}")
+    print(f"Informação: {informacao}")
+    print(f"Eu: {eu}\n")
+
+    # Configurar informações do email
+    email.To = email_destino
+    email.Subject = 'Assunto Personalizado'
+    email.Body = corpo_email
+
+    # Enviar o email
+    email.Send() # marcar como comentario caso nao queira enviar automatico 
+    # email.dysplay() # desmarcar caso queira visualizar antes de enviar
+    print(f"E-mail enviado para {email_destino}")
+    except Exception as e:
+         print(f'Ocorreu um erro ao enviar o e-mail: {e}')
+
+print("Todos os e-mails foram processados!")
